@@ -165,7 +165,7 @@ MysqlReader插件实现了从Mysql读取数据。在底层实现上，MysqlReade
 
 	  支持常量配置，用户需要按照Mysql SQL语法格式:
 	  ["id", "\`table\`", "1", "'bazhen.csy'", "null", "to_char(a + 1)", "2.3" , "true"]
-	  id为普通列名，\`table\`为包含保留在的列名，1为整形数字常量，'bazhen.csy'为字符串常量，null为空指针，to_char(a + 1)为表达式，2.3为浮点数，true为布尔值。
+	  id为普通列名，\`table\`为包含保留字的列名，1为整形数字常量，'bazhen.csy'为字符串常量，null为空指针，to_char(a + 1)为表达式，2.3为浮点数，true为布尔值。
 
 	* 必选：是 <br />
 
@@ -187,9 +187,9 @@ MysqlReader插件实现了从Mysql读取数据。在底层实现上，MysqlReade
 
 * **where**
 
-	* 描述：筛选条件，MysqlReader根据指定的column、table、where条件拼接SQL，并根据这个SQL进行数据抽取。例如在做测试时，可以将where条件指定为limit 10；在实际业务场景中，往往会选择当天的数据进行同步，可以将where条件指定为gmt_create > $bizdate 。<br />。
+	* 描述：筛选条件，MysqlReader根据指定的column、table、where条件拼接SQL，并根据这个SQL进行数据抽取。例如在做测试时，可以将where条件指定为limit 10；在实际业务场景中，往往会选择当天的数据进行同步，可以将where条件指定为gmt_create > $bizdate 。
 
-          where条件可以有效地进行业务增量同步。如果不填写where语句，包括不提供where的key或者value，DataX均视作同步全量数据。
+      where条件可以有效地进行业务增量同步。如果不填写where语句，包括不提供where的key或者value，DataX均视作同步全量数据。
 
 	* 必选：否 <br />
 
@@ -197,9 +197,9 @@ MysqlReader插件实现了从Mysql读取数据。在底层实现上，MysqlReade
 
 * **querySql**
 
-	* 描述：在有些业务场景下，where这一配置项不足以描述所筛选的条件，用户可以通过该配置型来自定义筛选SQL。当用户配置了这一项之后，DataX系统就会忽略table，column这些配置型，直接使用这个配置项的内容对数据进行筛选，例如需要进行多表join后同步数据，使用select a,b from table_a join table_b on table_a.id = table_b.id <br />
+	* 描述：在有些业务场景下，where这一配置项不足以描述所筛选的条件，用户可以通过该配置型来自定义筛选SQL。当用户配置了这一项之后，DataX系统就会忽略table，column这些配置型，直接使用这个配置项的内容对数据进行筛选，例如需要进行多表join后同步数据，使用select a,b from table_a join table_b on table_a.id = table_b.id 。
 
-	 `当用户配置querySql时，MysqlReader直接忽略table、column、where条件的配置`，querySql优先级大于table、column、where选项。
+	   `当用户配置querySql时，MysqlReader直接忽略table、column、where条件的配置`，querySql优先级大于table、column、where选项。
 
 	* 必选：否 <br />
 
@@ -299,7 +299,7 @@ MysqlReader插件实现了从Mysql读取数据。在底层实现上，MysqlReade
 说明：
 
 1. 这里的单表，主键类型为 bigint(20),范围为：190247559466810-570722244711460，从主键范围划分看，数据分布均匀。
-2. 对单表如果没有安装主键切分，那么配置通道个数不会提升速度，效果与1个通道一样。
+2. 对单表如果没有按照主键切分，那么配置通道个数不会提升速度，效果与1个通道一样。
 
 
 #### 4.2.2 分表测试报告(2个分库，每个分库16张分表，共计32张分表)
@@ -322,9 +322,9 @@ MysqlReader插件实现了从Mysql读取数据。在底层实现上，MysqlReade
 
 ### 5.2 一致性约束
 
-Mysql在数据存储划分中属于RDBMS系统，对外可以提供强一致性数据查询接口。例如当一次同步任务启动运行过程中，当该库存在其他数据写入方写入数据时，MysqlReader完全不会获取到写入更新数据，这是由于数据库本身的快照特性决定的。关于数据库快照特性，请参看[MVCC Wikipedia](https://en.wikipedia.org/wiki/Multiversion_concurrency_control)
+Mysql在数据存储划分中属于RDBMS系统，对外可以提供强一致性数据查询接口。例如当一次同步任务启动运行过程中，该库存在其他数据写入方写入数据时，MysqlReader完全不会获取到写入更新数据，这是由于数据库本身的快照特性决定的。关于数据库快照特性，请参看[MVCC Wikipedia](https://en.wikipedia.org/wiki/Multiversion_concurrency_control)
 
-上述是在MysqlReader单线程模型下数据同步一致性的特性，由于MysqlReader可以根据用户配置信息使用了并发数据抽取，因此不能严格保证数据一致性：当MysqlReader根据splitPk进行数据切分后，会先后启动多个并发任务完成数据同步。由于多个并发任务相互之间不属于同一个读事务，同时多个并发任务存在时间间隔。因此这份数据并不是`完整的`、`一致的`数据快照信息。
+上述是在MysqlReader单线程模型下数据同步一致性的特性，由于MysqlReader可以根据用户配置信息使用并发数据抽取，因此不能严格保证数据一致性：当MysqlReader根据splitPk进行数据切分后，会先后启动多个并发任务完成数据同步。由于多个并发任务相互之间不属于同一个读事务，同时多个并发任务存在时间间隔。因此这份数据并不是`完整的`、`一致的`数据快照信息。
 
 针对多线程的一致性快照需求，在技术上目前无法实现，只能从工程角度解决，工程化的方式存在取舍，我们提供几个解决思路给用户，用户可以自行选择：
 
@@ -345,7 +345,7 @@ MysqlReader底层使用JDBC进行数据抽取，JDBC天然适配各类编码，�
 MysqlReader使用JDBC SELECT语句完成数据抽取工作，因此可以使用SELECT...WHERE...进行增量数据抽取，方式有多种：
 
 * 数据库在线应用写入数据库时，填充modify字段为更改时间戳，包括新增、更新、删除(逻辑删)。对于这类应用，MysqlReader只需要WHERE条件跟上一同步阶段时间戳即可。
-* 对于新增流水型数据，MysqlReader可以WHERE条件后跟上一阶段最大自增ID即可。
+* 对于新增流水型数据，MysqlReader可以在WHERE条件后跟上一阶段最大自增ID即可。
 
 对于业务上无字段区分新增、修改数据情况，MysqlReader也无法进行增量数据同步，只能同步全量数据。
 
